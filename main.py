@@ -8,7 +8,7 @@ source_folder = '.'  # Folder to monitor for new PDF files
 output_folder = r'C:\Users\lvadlamudi\Desktop\ocr-output'  # Path of the OCR output folder
 
 processed_files = set()  # Track processed files to avoid duplicate OCR
-
+# CONTINOUS
 while True:
     dir_files = [f for f in os.listdir(source_folder) if os.path.isfile(os.path.join(source_folder, f))]
     for file in dir_files:
@@ -50,6 +50,10 @@ while True:
             merged_pdf_path = os.path.join(output_folder, file_name + '-ocr.pdf')
             merger.write(merged_pdf_path)
             merger.close()
+            
+            # Delete the original PDF file
+            os.remove(file)
+            print("Original PDF file deleted successfully.")
             
             # Move the OCR'd PDF to the output folder
             shutil.move(merged_pdf_path, os.path.join(output_folder, file_name + '-ocr.pdf'))
