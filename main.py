@@ -85,7 +85,7 @@ if __name__ == "__main__":
         source_folder = sys.argv[1]
         output_folder = sys.argv[2]
     else:
-        print("Usage: python ocr_script.py [source_folder] [output_folder]")
+        
         sys.exit(1)
 
     perform_ocr(source_folder, output_folder)
