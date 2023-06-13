@@ -6,6 +6,11 @@ import sys
 from pathlib import Path
 from PyPDF2 import PdfMerger
 
+# gets users pdfs from desktop
+# iterates ocr over every pdf w/o -ocr
+# returns ocr-d pdf in downloads folder
+# test --48
+
 def perform_ocr(source_folder, output_folder):
     processed_files = set()  # Track processed files to avoid duplicate OCR
 
@@ -13,6 +18,11 @@ def perform_ocr(source_folder, output_folder):
         dir_files = [f for f in os.listdir(source_folder) if os.path.isfile(os.path.join(source_folder, f))]
         for file in dir_files:
             if file.endswith('.pdf') and file not in processed_files:
+                # Skip files that have already been OCR'd
+                if '-ocr' in file:
+                    print('Skipping:', file, '- Already OCR\'d')
+                    continue
+
                 print('Working on converting:', file)
 
                 # Set up folder and file paths
@@ -62,7 +72,6 @@ def perform_ocr(source_folder, output_folder):
                 shutil.rmtree(folder)
                 print("Temporary folder deleted successfully.")
 
-                # Add the processed file to the set
                 processed_files.add(file)
 
         time.sleep(1)  # Wait before checking for new PDF files again
