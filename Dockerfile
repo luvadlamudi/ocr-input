@@ -22,4 +22,4 @@ ENV SOURCE_FOLDER=/input
 ENV OUTPUT_FOLDER=/output
 
 
-CMD ["python", "main.py", "$SOURCE_FOLDER", "$OUTPUT_FOLDER"]
+CMD ["python", "main.py", "/input", "/output"]

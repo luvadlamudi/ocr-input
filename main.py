@@ -85,7 +85,7 @@ if __name__ == "__main__":
         source_folder = sys.argv[1]
         output_folder = sys.argv[2]
     else:
-        # If error
+        
         sys.exit(1)
 
     perform_ocr(source_folder, output_folder)
