@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+import streamlit as st
 import os
 import time
 import calendar
@@ -6,37 +6,7 @@ import shutil
 from pathlib import Path
 from PyPDF2 import PdfMerger
 
-app = Flask(__name__)
-
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    if request.method == 'POST':
-        # Get the uploaded file from the request
-        uploaded_file = request.files['pdf-file']
-        
-        # Save the uploaded file to a temporary location
-        temp_folder = 'temp_uploads'
-        if not os.path.exists(temp_folder):
-            os.makedirs(temp_folder)
-        uploaded_file.save(os.path.join(temp_folder, 'uploaded.pdf'))
-
-        # Perform OCR on the uploaded PDF file
-        ocr_filename = ocr_pdf(os.path.join(temp_folder, 'uploaded.pdf'))
-        
-        # Generate the download URL for the OCR'd PDF file
-        download_url = '/download-pdf?filename=' + ocr_filename
-        
-        return jsonify({'downloadLink': download_url})
-    
-    return render_template('index.html')
-
-@app.route('/download-pdf')
-def download_pdf():
-    filename = request.args.get('filename')
-    # ... perform any necessary validation and error handling ...
-    directory = os.path.abspath(os.path.dirname(__file__))  # Get the absolute path of the script's directory
-    return send_from_directory(directory, filename, as_attachment=True)
-
+# OCR PDF function
 def ocr_pdf(pdf_path):
     # OCR process to convert PDF to OCR'd PDF
     processed_files = set()  # Track processed files to avoid duplicate OCR
@@ -78,5 +48,27 @@ def ocr_pdf(pdf_path):
 
     return file_name + '-ocr.pdf'
 
+# Streamlit app
+def main():
+    st.title('OCR PDF')
+
+    uploaded_file = st.file_uploader('Upload PDF', type='pdf', accept_multiple_files=True)
+
+    if uploaded_file is not None:
+        # Save the uploaded file to a temporary location
+        temp_folder = 'temp_uploads'
+        if not os.path.exists(temp_folder):
+            os.makedirs(temp_folder)
+        uploaded_file.save(os.path.join(temp_folder, 'uploaded.pdf'))
+
+        # Perform OCR on the uploaded PDF file
+        ocr_filename = ocr_pdf(os.path.join(temp_folder, 'uploaded.pdf'))
+
+        # Generate the download URL for the OCR'd PDF file
+        download_url = '/download-pdf?filename=' + ocr_filename
+
+        # Display the download link
+        st.markdown(f'[Download OCR\'d PDF]({download_url})')
+
 if __name__ == '__main__':
-    app.run()
+    main()

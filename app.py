@@ -1,167 +1,97 @@
 import streamlit as st
+import os
+import time
+import calendar
+import shutil
+from pathlib import Path
+from PyPDF2 import PdfMerger
+import base64
 
-# CSS styles
-st.markdown(
-    """
-    <style>
-    .main {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin-top: 200px;
-    }
-    
-    body {
-        color: #f8f8f8;
-        background-color: #1f1f1f;
-    }
-    
-    .container {
-        max-width: 400px;
-        padding: 20px;
-        margin: 0 auto;
-        background-color: #333333;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        text-align: center;
-    }
-    
-    .upload-btn {
-        margin-top: 20px;
-    }
-    
-    .upload-btn label {
-        display: block;
-        width: 100%;
-        background-color: #888888;
-        color: #f8f8f8;
-        padding: 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-        font-weight: bold;
-    }
-    
-    .upload-btn label:hover {
-        background-color: #aaaaaa;
-    }
-    
-    .upload-btn label:active {
-        background-color: #666666;
-    }
-    
-    .download-link {
-        margin-top: 20px;
-        display: none;
-    }
-    
-    .download-link a {
-        color: #f8f8f8;
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-    
-    .download-link a:hover {
-        color: #cccccc;
-    }
-    
-    .separator {
-        margin-top: 30px;
-        border-top: 1px solid #f8f8f8;
-        width: 100%;
-    }
-    
-    .new-pdfs {
-        margin-top: 30px;
-        text-align: center;
-    }
-    
-    .new-pdfs h2 {
-        color: #f8f8f8;
-        margin-bottom: 10px;
-    }
-    
-    .new-pdfs ul {
-        list-style-type: none;
-        padding: 0;
-    }
-    
-    .new-pdfs li {
-        margin-bottom: 5px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# OCR PDF function
+def ocr_pdf(pdf_path):
+    # OCR process to convert PDF to OCR'd PDF
+    processed_files = set()  # Track processed files to avoid duplicate OCR
 
-# Display the app content
-st.markdown(
-    """
-    <div class="container">
-        <h1 style="margin-bottom: 20px; color: #f8f8f8;">OCR PDF</h1>
-        <div class="upload-btn">
-            <label for="pdf-file">Choose Files</label>
-            <input type="file" id="pdf-file" accept=".pdf" multiple style="display: none;">
-        </div>
-        <div class="download-link" id="download-link">
-            <a href="" download>Download OCR'd PDFs</a>
-        </div>
-    </div>
-    
-    <div class="separator"></div>
-    
-    <div class="new-pdfs" id="new-pdfs" style="display: none;">
-        <h2>Newly OCR'd PDFs:</h2>
-        <ul id="pdf-list"></ul>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+    file_name = os.path.splitext(os.path.basename(pdf_path))[0]
+    folder = str(int(calendar.timegm(time.gmtime()))) + '_' + file_name
+    combined = os.path.join(folder, file_name)
 
-# Add JavaScript code to handle file upload and display downloaded PDFs
-st.markdown(
-    """
-    <script>
-    const pdfFile = document.getElementById('pdf-file');
-    const downloadLink = document.getElementById('download-link');
-    const pdfList = document.getElementById('pdf-list');
-    const newPDFsSection = document.getElementById('new-pdfs');
+    # Create temporary folder
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
-    pdfFile.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        const formData = new FormData();
+    # Convert PDF to PNG(s)
+    magick = f'convert -density 150 "{pdf_path}" "{combined}-%04d.png"'
+    os.system(magick)
 
-        files.forEach((file) => {
-            formData.append('pdf-files', file);
-        });
+    # Convert PNG(s) to PDF(s) with OCR data
+    pngs = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+    for pic in pngs:
+        if pic.endswith('.png'):
+            combined_pic = os.path.join(folder, pic)
+            tesseract = f'tesseract "{combined_pic}" "{combined_pic}-ocr" PDF'
+            os.system(tesseract)
 
-        fetch('/', {
-            method: 'POST',
-            body: formData
-        })
-        .then((response) => response.json())
-        .then((data) => {
-            downloadLink.href = data.downloadLink;
-            downloadLink.style.display = 'block';
+    # Combine OCR'd PDFs into one
+    ocr_pdfs = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
 
-            // Display the list of newly OCR'd PDFs
-            const pdfs = data.pdfs;
-            if (pdfs.length > 0) {
-                newPDFsSection.style.display = 'block';
-                pdfList.innerHTML = '';
+    merger = PdfMerger()
+    for pdf in ocr_pdfs:
+        if pdf.endswith('.pdf'):
+            merger.append(os.path.join(folder, pdf))
 
-                pdfs.forEach((pdf) => {
-                    const li = document.createElement('li');
-                    li.textContent = pdf;
-                    pdfList.appendChild(li);
-                });
-            }
-        })
-        .catch((error) => console.error(error));
-    });
-    </script>
-    """,
-    unsafe_allow_html=True
-)
+    merged_pdf_path = os.path.join('output', file_name + '-ocr.pdf')
+    merger.write(merged_pdf_path)
+    merger.close()
+
+    # Delete the temporary folder and its contents
+    shutil.rmtree(folder)
+
+    return merged_pdf_path
+
+
+# Streamlit app
+def main():
+    st.title('OCR PDF')
+
+    uploaded_files = st.file_uploader('Upload PDF', type='pdf', accept_multiple_files=True)
+
+    if uploaded_files is not None:
+        # Create a temporary folder to store the uploaded PDFs
+        temp_folder = 'temp_uploads'
+        if not os.path.exists(temp_folder):
+            os.makedirs(temp_folder)
+
+        ocr_filenames = []
+
+        for uploaded_file in uploaded_files:
+            # Read the contents of the uploaded file
+            file_contents = uploaded_file.read()
+
+            # Generate a unique filename for each uploaded file
+            file_name = f'{str(int(calendar.timegm(time.gmtime())))}_{uploaded_file.name}'
+
+            # Write the file contents to the temporary location
+            file_path = os.path.join(temp_folder, file_name)
+            with open(file_path, 'wb') as f:
+                f.write(file_contents)
+
+            # Perform OCR on the uploaded PDF file
+            ocr_filename = ocr_pdf(file_path)
+            ocr_filenames.append(ocr_filename)
+
+        # Generate the download URLs for the OCR'd PDF files
+        download_urls = []
+        for ocr_filename in ocr_filenames:
+            with open(ocr_filename, 'rb') as f:
+                contents = f.read()
+                b64_pdf = base64.b64encode(contents).decode('utf-8')
+                download_url = f'<a href="data:application/pdf;base64,{b64_pdf}" download="{ocr_filename}">Download OCR\'d PDF</a>'
+                download_urls.append(download_url)
+
+        # Display the download links for the OCR'd PDF files
+        for download_url in download_urls:
+            st.markdown(download_url, unsafe_allow_html=True)
+
+if __name__ == '__main__':
+    main()
