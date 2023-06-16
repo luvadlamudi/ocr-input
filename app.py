@@ -8,6 +8,13 @@ from PyPDF2 import PdfMerger
 import base64
 from io import BytesIO
 import threading
+import requests
+import streamlit_lottie as st_lottie 
+
+
+
+
+lottie_coding = "https://assets3.lottiefiles.com/private_files/lf30_4kmk2efh.json"
 
 
 # OCR PDF function
@@ -65,12 +72,22 @@ def get_download_link(file_path, file_name):
 
 # Streamlit
 def main():
-    st.write("""
-    # OCR PDF
-    """)
+
+    st.title("")
+    st.title("")
+    st.markdown("<h1>OCR PDF</h1>", unsafe_allow_html=True)
+    st.title("")
+    
+    st.title("")
+    
+    st.title("")
+    st.title("")
+   
+
 
     # Allows it to accept multiple PDF files
-    uploaded_files = st.file_uploader('Upload PDFs', type='pdf', accept_multiple_files=True)
+    
+    uploaded_files = st.file_uploader("  **Upload PDFs**", type='pdf', accept_multiple_files=True)
 
     # If there are uploaded files ...
     if uploaded_files:
@@ -150,3 +167,9 @@ def download_all(ocr_files):
 
 if __name__ == '__main__':
     main()
+
+
+    #bg
+    #https://assets1.lottiefiles.com/packages/lf20_ysbhqsuf.json
+
+
