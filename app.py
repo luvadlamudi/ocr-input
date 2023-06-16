@@ -1,21 +1,20 @@
-import streamlit as st # Web interf
-import os # Directory func
-import time #Temp folder
-import calendar # Temp folder
-import shutil #Removes Temp folders
-from pathlib import Path # Gets Dir Path
-from PyPDF2 import PdfMerger # Merge PDFs into one
-import base64 # Binary Convert for Dwnl link
-from io import BytesIO # Creates Temp zip
-import threading # Dwnl all func
-
-
+import streamlit as st
+import os
+import time
+import calendar
+import shutil
+from pathlib import Path
+from PyPDF2 import PdfMerger
+import base64
+from io import BytesIO
+import threading
 
 
 # OCR PDF function
 def ocr_pdf(pdf_path):
     # OCR process to convert PDF to OCR'd PDF
-    processed_files = set()  # Track processed files to avoid duplicate OCR
+    # Track processed files to avoid duplicate OCR
+    processed_files = set()  
 
     file_name = os.path.splitext(os.path.basename(pdf_path))[0]
     folder = str(int(calendar.timegm(time.gmtime()))) + '_' + file_name
@@ -55,6 +54,7 @@ def ocr_pdf(pdf_path):
     # Sends back file path
     return output_path
 
+
 # Function to generate download link for a file
 def get_download_link(file_path, file_name):
     with open(file_path, 'rb') as f:
@@ -62,25 +62,23 @@ def get_download_link(file_path, file_name):
     download_link = f'<a href="data:application/octet-stream;base64,{base64_encoded}" download="{file_name}">Download {file_name}</a>'
     return download_link
 
-# Streamlit 
+
+# Streamlit
 def main():
     st.write("""
     # OCR PDF
     """)
 
-
-
-
-
-
     # Allows it to accept multiple PDF files
-    uploaded_files = st.file_uploader('Upload PDFS', type='pdf', accept_multiple_files=True)
-    
+    uploaded_files = st.file_uploader('Upload PDFs', type='pdf', accept_multiple_files=True)
+
     # If there are uploaded files ...
     if uploaded_files:
         ocr_files = []
-
-        for uploaded_file in uploaded_files:
+        # Display progress bar while OCR process is running
+        progress_text = "Performing OCR... Please wait."
+        my_bar = st.progress(0)
+        for i, uploaded_file in enumerate(uploaded_files):
             # Read the contents of the uploaded file
             file_contents = uploaded_file.read()
 
@@ -99,26 +97,25 @@ def main():
             # Delete the temporary file
             os.remove(temp_path)
 
+            # Update progress bar
+            progress_percent = int((i + 1) / len(uploaded_files) * 100)
+            my_bar.progress(progress_percent)
+
+
+        ##############################
+        # NEEDS DWNL BUTTON
+        # ENCODE TO BASE64
+        # 
+
         # Display the download buttons for the OCR'd PDF files
         for ocr_file_path, file_name in ocr_files:
             download_link = get_download_link(ocr_file_path, file_name)
             st.markdown(download_link, unsafe_allow_html=True)
 
-    ##########
-        # NEEDS WORK ***  BUTTON TO DOWNLOAD ALL FILES, POP UP BUTTON AFTER OCR RUNS, ADD -OCR TO EACH FILE DWNL THEN ENCODE USING 
-        # BASE64
-    #####
-
-        def download_all():
-            merged_file_path = merge_pdf_files(ocr_files)
-            merged_file_name = 'All_OCR_PDFs.zip'
-            download_all_link = get_download_link(merged_file_path, merged_file_name)
-            st.markdown(f'<a href="{download_all_link}" download="{merged_file_name}"><button>Download All OCR\'d PDFs</button></a>', unsafe_allow_html=True)
-
+        # Button to download all OCR'd PDFs
         if len(ocr_files) > 1:
-            threading.Thread(target=download_all).start()
+            threading.Thread(target=download_all, args=(ocr_files,)).start()
 
-    ######
 
 # Function to merge OCR'd PDF files
 def merge_pdf_files(ocr_files):
@@ -142,8 +139,14 @@ def merge_pdf_files(ocr_files):
 
     return temp_zip_path
 
+# Function to download all OCR'd PDFs
+def download_all(ocr_files):
+    merged_file_path = merge_pdf_files(ocr_files)
+    merged_file_name = 'All_OCR_PDFs.zip'
+    download_all_link = get_download_link(merged_file_path, merged_file_name)
+    st.markdown(f'<a href="{download_all_link}" download="{merged_file_name}"><button>Download All OCR\'d PDFs</button></a>',
+                unsafe_allow_html=True)
+
+
 if __name__ == '__main__':
     main()
-
-#if __name__ == '__main__':
-#    main(debug=True)
