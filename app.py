@@ -64,7 +64,9 @@ def get_download_link(file_path, file_name):
 
 # Streamlit 
 def main():
-    st.title('OCR PDF')
+    st.write("""
+    # OCR PDF
+    """)
 
 
 
@@ -118,9 +120,7 @@ def main():
 
     ######
 
-
-
-# Function to merge OCR'd PDF files into a single zip file
+# Function to merge OCR'd PDF files
 def merge_pdf_files(ocr_files):
     merger = PdfMerger()
 
