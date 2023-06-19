@@ -9,15 +9,38 @@ import base64
 from io import BytesIO
 import threading
 import requests
-import streamlit_lottie as st_lottie 
+from streamlit_lottie import st_lottie 
+import json
+# layout = "wide"
+
+st.set_page_config(page_title="OCR PDF", page_icon=":pdf:", initial_sidebar_state="expanded")
+
+
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+lottie_ocr = load_lottieurl("https://assets8.lottiefiles.com/packages/lf20_ow1gekva.json")
+
+
+left_column, right_column = st.columns([1, 0.5])
+
+
+with left_column:
+    st.write("##")
+    st.markdown("# OCR PDF", unsafe_allow_html=True)
+
+with right_column:
+
+    st.write("##")
+    
+    st_lottie(lottie_ocr, height=100, width=200)
 
 
 
-
-lottie_coding = "https://assets3.lottiefiles.com/private_files/lf30_4kmk2efh.json"
-
-
-# OCR PDF function
+# OCR PDF function  
 def ocr_pdf(pdf_path):
     # OCR process to convert PDF to OCR'd PDF
     # Track processed files to avoid duplicate OCR
@@ -72,22 +95,12 @@ def get_download_link(file_path, file_name):
 
 # Streamlit
 def main():
-
-    st.title("")
-    st.title("")
-    st.markdown("<h1>OCR PDF</h1>", unsafe_allow_html=True)
-    st.title("")
-    
-    st.title("")
-    
-    st.title("")
-    st.title("")
    
-
-
     # Allows it to accept multiple PDF files
-    
-    uploaded_files = st.file_uploader("  **Upload PDFs**", type='pdf', accept_multiple_files=True)
+    st.write("---")
+    st.write("##")
+    st.write(" ##### Upload PDFs")
+    uploaded_files = st.file_uploader(" ", type='pdf', accept_multiple_files=True)
 
     # If there are uploaded files ...
     if uploaded_files:
