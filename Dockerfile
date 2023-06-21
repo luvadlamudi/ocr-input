@@ -1,25 +1,16 @@
+# Use an official Python runtime as the base image
+FROM python:3.9
 
-FROM python:3.9-slim
+# Set the working directory in the container
+WORKDIR /app
 
-# Keeps Python from generating .pyc files in the container
-ENV PYTHONDONTWRITEBYTECODE=1
-
-# Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED=1
-
-# Install pip requirements
-COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
-
-# Set the working directory inside the container
-WORKDIR /ocr-app
-
-# Copy the Python script
+# Copy the code files to the container
 COPY main.py .
+COPY requirements.txt .
+COPY .env .
 
-# Set default input and output folders
-ENV SOURCE_FOLDER=/input
-ENV OUTPUT_FOLDER=/output
+# Install the dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-
-CMD ["python", "main.py", "/input", "/output"]
+# Set the entrypoint command to run your Python script
+CMD ["python", "/app/main.py"]
